@@ -1,0 +1,174 @@
+---
+title: "Untitled"
+author: "Zihao Zhang"
+date: "2024-09-25"
+output: pdf_document
+latex_engine: xelatex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tinytex)
+
+
+
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+```{r a}
+library(data.table)
+library(lubridate)
+setwd('C:/Users/Owner/Downloads')
+read.csv('Rainfall.csv')
+file_root<-"https://www.ndbc.noaa.gov/view_text_file.php?filename=44013h"
+tail <- ".txt.gz&dir=data/historical/stdmet/"
+final <- data.table()
+
+for (year in 1985:2023) {
+  path <- paste0(file_root, year, tail)
+  header <- scan(path, what = 'character', nlines = 1, quiet = TRUE)
+  skip_lines <- ifelse(year >= 2007, 2, 1)
+  buoy_data <- fread(path, header = FALSE, skip = skip_lines, fill = Inf)
+  actual_col_count <- ncol(buoy_data)
+  header_col_count <- length(header)
+  
+  if (header_col_count > actual_col_count) {
+    header <- header[1:actual_col_count]
+  } else if (header_col_count < actual_col_count) {
+    header <- c(header, paste0("V", (header_col_count + 1):actual_col_count))
+  }
+  
+  colnames(buoy_data) <- header
+  
+  # Add a year column
+  buoy_data[, Year := year]
+  
+  # Append to the final data table
+  final <- rbind(final, buoy_data, fill = TRUE)
+}
+```
+
+```{r b}
+columns_to_check <- c("WD", "WSPD", "GST", "WVHT", "DPD", "APD", "MWD", "BAR", "ATMP", "WTMP", "DEWP",'VIS')
+
+# replace 999 as NA
+final <- rbind(final, buoy_data, fill = TRUE)
+for (col in columns_to_check) {
+  final[get(col) == 999, (col) := NA]
+}
+
+na_summary <- sapply(final, function(x) sum(is.na(x)))
+na_summary
+
+
+library(naniar)
+
+# Visualize the pattern of missing values across the dataset
+gg_miss_var(final)
+library(lubridate)
+
+
+final[, Date := make_date(Year, MM, DD)]
+final[, Date := as.Date(Date, format = "%Y-%m-%d")]
+
+# Analyze the distribution of NA values by year
+final[, Date := make_date(Year, MM, DD)]
+
+
+columns_to_check <- c("WD", "WSPD", "GST", "WVHT", "DPD", "APD", "MWD", "BAR", "ATMP", "WTMP", "DEWP",'VIS')
+
+
+na_trend_all_vars <- final[, lapply(.SD, function(x) sum(is.na(x))), 
+                           by = Year, 
+                           .SDcols = columns_to_check]
+
+# Melt the data for easier plotting (long format for ggplot2)
+library(reshape2)
+na_trend_long <- melt(na_trend_all_vars, id.vars = "Year", variable.name = "Variable", value.name = "NA_count")
+library(ggplot2)
+ggplot(na_trend_long, aes(x = Year, y = NA_count, color = Variable)) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Trend of Missing Values (NA) by Year for All Variables",
+       x = "Year", y = "Number of Missing Values (NA)", color = "Variable") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
+
+
+
+```{r c}
+library(data.table)
+library(ggplot2)
+final[, Date := make_date(Year, MM, DD)]
+
+# Remove rows where variables of interest are NA (for simplicity)
+Air_tem <- c("ATMP")
+clean_data <- final[, lapply(.SD, function(x) na.omit(x)), .SDcols = Air_tem]
+yearly_trend <- final[, .(avg_ATMP = mean(ATMP, na.rm = TRUE)), by = Year]
+ATMP_model <- lm(avg_ATMP ~ Year, data = yearly_trend)
+summary(ATMP_model)
+ggplot(yearly_trend, aes(x = Year, y = avg_ATMP)) +
+  geom_smooth(method = lm) +
+  geom_point() +
+  labs(title = "Average Air Temperature (ATMP) Trend Over Time",
+       x = "Year", y = "Average Air Temperature (°C)") +
+  theme_minimal()
+
+#answer:
+#The linear regression model of average air temperature (ATMP) against the year indicates a statistically significant warming trend over time. The model's intercept is estimated at -72.83, and the slope (yearly temperature increase) is approximately 0.041°C per year. The p-value for the slope is 0.047, which shows that the increase in temperature is significant at the 5% level. The residuals range from -3.48 to 4.07, with a median close to zero, indicating that while the model reasonably fits the data, some variability remains unaccounted for. This suggests that other environmental factors could also play a role. Overall, the results indicate a consistent rise in air temperatures from the mid-1980s to the present, aligning with global warming trends.
+```
+
+
+
+
+
+```{r d}
+# Load libraries
+library(data.table)
+library(lubridate)
+library(dplyr)
+
+
+# Read in the rainfall data as a data.table
+rainfall_data <- read.csv('Rainfall.csv')
+library(dplyr)
+
+
+# Use the Year column and fully qualified dplyr functions
+annual_avg <- rainfall_data %>%
+  dplyr::group_by(Year) %>%
+  dplyr::summarise(mean_HPCP = mean(HPCP, na.rm = TRUE))
+
+# Output the results
+print(annual_avg)
+
+final[, Date := make_date(Year, MM, DD)]
+
+# Remove rows where variables of interest are NA (for simplicity)
+WATER_tem <- c("WTMP")
+
+clean_data <- final[, lapply(.SD, function(x) na.omit(x)), .SDcols = WATER_tem]
+yearly_trend1 <- final[, .(avg_WTSP = mean(WTMP, na.rm = TRUE)), by = Year]
+
+combined_data <- merge(annual_avg, yearly_trend1, by = "Year")
+combined_data
+model<-lm(mean_HPCP ~ avg_WTSP, data = combined_data)
+summary(model)
+ggplot(combined_data, aes(x = avg_WTSP, y = mean_HPCP)) +
+  geom_point() +  # Scatter plot
+  geom_smooth(method = "lm", col = "blue") +  # Add regression line
+  labs(title = "Relationship between Mean HPCP and Average Water Temperature",
+       x = "Average Water Temperature (avg_WTSP)",
+       y = "Mean Precipitation (mean_HPCP)") +
+  theme_minimal()
+
+```
+
+
+
+
