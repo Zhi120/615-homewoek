@@ -1,0 +1,111 @@
+---
+title: "615 EDA"
+format: pdf
+editor: visual
+---
+
+## Quarto
+
+Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+
+```{r}
+library(ggplot2)
+library(dplyr)
+data <- read.csv("C:/Users/Owner/Downloads/new.csv")
+head(data)
+```
+
+### 2. Distribution of Chemicals
+
+```{r}
+data_chem<- data %>%
+  filter(Year %in% c("2018", "2019", "2023") & State %in% c("CALIFORNIA", "FLORIDA")& chem_name %in% c("NITROGEN", "PHOSPHATE", "POTASH", "SULFUR")& measure=="LB")
+
+ggplot(data_chem, aes(x = factor(Year), y = Value, fill = chem_name))+
+  geom_bar(stat = "identity", position = "dodge")+
+  facet_wrap(~ State)+
+  labs(
+       x = "Year",
+       y = "Total Amount(LB)")+
+  theme_minimal()
+```
+
+**Chemical yealy usage per Acre in California and Florida (2023) - Measured in LB/ACRE/YEAR**
+
+```{r}
+# Load necessary libraries
+library(ggplot2)
+library(dplyr)
+
+# Define the years you want to visualize
+data_2023 <- data %>%
+  filter(Year == 2023 & State %in% c('CALIFORNIA', 'FLORIDA') & 
+         chem_name %in% c('NITROGEN', 'PHOSPHATE', 'POTASH', 'SULFUR')&measure == "LB / ACRE / YEAR")
+
+# Plot chemical usage for California and Florida in 2023
+ggplot(data_2023, aes(x = chem_name, y = Value, fill = State)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Chemical Usage in California and Florida (2023)", 
+       x = "Chemical", y = " Amount (LB)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+**Chemical yearly usage per Acre in California and Florida (2019) - Measured in LB/ACRE/YEAR**
+
+```{r}
+data_2019 <- data %>%
+  filter(Year == 2019 & State %in% c('CALIFORNIA', 'FLORIDA') & 
+         chem_name %in% c('NITROGEN', 'PHOSPHATE', 'POTASH', 'SULFUR')& measure == "LB / ACRE / YEAR")
+
+# Plot chemical usage for California and Florida in 2019
+ggplot(data_2019, aes(x = chem_name, y = Value, fill = State)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Chemical Usage in California and Florida (2019)", 
+       x = "Chemical", y = " Amount (LB)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+**Chemical yearly usage per Acre in California and Florida (2018) - Measured in LB/ACRE/YEAR**
+
+```{r}
+data_2018 <- data %>%
+  filter(Year == 2018 & State %in% c('CALIFORNIA', 'FLORIDA') & 
+         chem_name %in% c('NITROGEN', 'PHOSPHATE', 'POTASH', 'SULFUR')& measure %in% c('LB / ACRE / YEAR'))
+
+# Plot chemical usage for California and Florida in 2018
+ggplot(data_2018, aes(x = chem_name, y = Value, fill = State)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Chemical Usage in California and Florida (2018)", 
+       x = "Chemical", y = " Amount (LB)") +
+  theme_minimal() 
+  
+
+```
+
+### **Summary and Insights**:
+
+-   **Phosphate**: California consistently uses more phosphate than Florida over the years, indicating a possible reliance on phosphate for the type of crops grown or specific soil conditions. The steady need for phosphate may suggest that California's soil naturally lacks phosphorus or that it is critical for yield optimization in the crops they focus on.
+
+-   **Nitrogen**: Florida’s nitrogen use has increased steadily from 2018 to 2023, while California’s nitrogen usage has fluctuated slightly, suggesting that different agricultural demands or policies may have driven this change.
+
+-   **Potash**: Potash remains stable between the two states, indicating similar agricultural demands for potassium. Potash might be essential for crops common to both regions.
+
+-   **Sulfur**: Sulfur usage was significantly higher in California in 2018, possibly for addressing a particular agricultural issue (like pest control or soil management), but it has dropped in subsequent years.
+
+### **Hypotheses and Future Considerations**:
+
+1.  **Soil Fertility**: The consistently higher phosphate usage in California may point to lower natural soil phosphorus levels, whereas Florida’s soil could be more phosphorus-rich, requiring fewer amendments.
+
+2.  **Crop Rotation**: The increase in nitrogen usage in Florida from 2018 to 2023 could indicate a change in crop rotation practices, with nitrogen-demanding crops being introduced in later years.
+
+3.  **Policy or Climate-Driven Changes**: The fluctuation in sulfur usage in California may reflect responses to climate or pest outbreaks that required sulfur-based solutions in 2018 but were less necessary in later years.
+
+4.  **Environmental Regulations**: Varying usage patterns may also be linked to environmental regulations or shifts in best practices for sustainable farming, particularly in states with strong agricultural sectors like California and Florida.
+
+### **Conclusion**:
+
+The comparison of chemical usage across California and Florida from 2018 to 2023 reveals differences in nutrient needs and application trends between the two states. California consistently relies on phosphate and potash, while Florida shows increasing nitrogen demand over time. The fluctuations in sulfur usage suggest temporary agricultural challenges that were addressed in 2018. Understanding these trends can help inform sustainable agricultural practices and optimize chemical usage based on soil conditions and crop needs.
